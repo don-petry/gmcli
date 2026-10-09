@@ -186,6 +186,11 @@ gmcli auth
 #    the connection open and writes new messages as they arrive.
 gmcli sync --follow
 
+#    Without --follow, the initial pass lists the 50 most recent
+#    conversations and fetches the newest 10 messages in each. Both are flags:
+gmcli sync --recent 100                       # periodic one-shot runs
+gmcli sync --conversations 2000 --recent 0    # list every conversation, fetch no messages
+
 # 3. Query the local archive (read-only).
 gmcli chats list                              # most-recent conversations
 gmcli chats show <conversation-id>            # header + recent messages
