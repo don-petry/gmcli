@@ -43,15 +43,26 @@ type sendSettingsRefreshResult struct {
 
 func syncCmd() *cobra.Command {
 	var follow bool
+	var conversations int
+	var recent int64
 	c := &cobra.Command{
 		Use:   "sync",
 		Short: "Connect to Google Messages and write events into the local store",
 		Long: "Open the long-poll connection to your paired phone and persist incoming " +
 			"conversations, messages, and contacts into the SQLite store. With --follow, " +
 			"the connection stays open until interrupted; without it, the command runs the " +
-			"initial-sync pass and exits.",
+			"initial-sync pass and exits. The initial pass lists the --conversations most " +
+			"recent conversations and fetches the --recent newest messages in each; raise " +
+			"--recent for periodic one-shot runs, or pass --recent 0 with a large " +
+			"--conversations to list every conversation before a history backfill.",
 		Args: noArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if conversations < 1 {
+				return usageErrorf("--conversations must be at least 1")
+			}
+			if recent < 0 {
+				return usageErrorf("--recent must not be negative")
+			}
 			layout, err := resolveLayout()
 			if err != nil {
 				return err
@@ -94,7 +105,7 @@ func syncCmd() *cobra.Command {
 				logger.Info().Int("contacts", imported).Msg("Imported contacts")
 			}
 
-			if resp, err := client.Underlying().ListConversations(ctx, 50, gmproto.ListConversationsRequest_INBOX); err != nil {
+			if resp, err := client.Underlying().ListConversations(ctx, conversations, gmproto.ListConversationsRequest_INBOX); err != nil {
 				logger.Warn().Err(err).Msg("Conversation import failed")
 			} else {
 				validConversations, valid := conversationSnapshotRows(resp)
@@ -110,7 +121,10 @@ func syncCmd() *cobra.Command {
 					}
 					pump.Handle(conv)
 					convs++
-					if history, err := client.Underlying().FetchMessages(ctx, conv.GetConversationID(), 10, nil); err != nil {
+					if recent <= 0 {
+						continue
+					}
+					if history, err := client.Underlying().FetchMessages(ctx, conv.GetConversationID(), recent, nil); err != nil {
 						logger.Debug().Err(err).Str("conversation_id", conv.GetConversationID()).Msg("Recent message import failed")
 					} else {
 						msgs += pump.ImportMessages(ctx, history.GetMessages())
@@ -146,6 +160,8 @@ func syncCmd() *cobra.Command {
 		},
 	}
 	c.Flags().BoolVar(&follow, "follow", false, "stay connected and stream events until interrupted")
+	c.Flags().IntVar(&conversations, "conversations", 50, "how many of the most recent conversations to list")
+	c.Flags().Int64Var(&recent, "recent", 10, "newest messages to fetch per listed conversation (0 lists conversations only)")
 	c.AddCommand(syncSendSettingsCmd())
 	return c
 }

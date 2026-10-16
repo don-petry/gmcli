@@ -224,3 +224,35 @@ func TestHealthSnapshotValidation(t *testing.T) {
 		t.Fatal("invalid contact accepted")
 	}
 }
+
+func TestSyncInitialPassFlagsKeepHistoricalDefaults(t *testing.T) {
+	c := syncCmd()
+	for name, want := range map[string]string{"conversations": "50", "recent": "10"} {
+		flag := c.Flags().Lookup(name)
+		if flag == nil {
+			t.Fatalf("sync is missing --%s", name)
+		}
+		if flag.DefValue != want {
+			t.Fatalf("--%s default = %s, want %s", name, flag.DefValue, want)
+		}
+	}
+}
+
+func TestSyncRejectsInvalidInitialPassCounts(t *testing.T) {
+	for _, tc := range []struct {
+		args []string
+		want string
+	}{
+		{[]string{"--conversations", "0"}, "--conversations must be at least 1"},
+		{[]string{"--recent", "-1"}, "--recent must not be negative"},
+	} {
+		c := syncCmd()
+		c.SilenceUsage = true
+		c.SilenceErrors = true
+		c.SetArgs(tc.args)
+		err := c.Execute()
+		if err == nil || !strings.Contains(err.Error(), tc.want) {
+			t.Fatalf("sync %v: err = %v, want %q", tc.args, err, tc.want)
+		}
+	}
+}
