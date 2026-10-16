@@ -115,7 +115,12 @@ func TestBrowserCaptureIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	root := t.TempDir()
+	// Chrome's Unix socket path must remain below the platform length limit.
+	root, err := os.MkdirTemp("", "gmcli-fixture-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(root) })
 	t.Setenv("TMPDIR", root)
 	t.Setenv("TMP", root)
 	t.Setenv("TEMP", root)
@@ -175,6 +180,9 @@ func TestBrowserCaptureIntegration(t *testing.T) {
 	}
 	entries, err = os.ReadDir(root)
 	if err != nil || len(entries) != 0 {
+		for _, entry := range entries {
+			t.Logf("remaining temporary entry: %s", entry.Name())
+		}
 		t.Fatalf("temporary profile remains after success: count=%d err=%v", len(entries), err)
 	}
 }

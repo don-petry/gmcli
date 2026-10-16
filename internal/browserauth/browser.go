@@ -87,6 +87,8 @@ func newBrowser(ctx context.Context, path string, extra ...chromedp.ExecAllocato
 	// switches apply only to this disposable profile, never the user's browser.
 	opts := []chromedp.ExecAllocatorOption{
 		chromedp.ExecPath(path), chromedp.UserDataDir(profile),
+		// Keep browser-created temporary downloads inside the private cleanup scope.
+		chromedp.Env("TMPDIR="+profile, "TMP="+profile, "TEMP="+profile),
 		chromedp.NoFirstRun, chromedp.NoDefaultBrowserCheck,
 		chromedp.Flag("disable-features", "DeviceBoundSessions,EnableBoundSessionCredentials"),
 		chromedp.Flag("disable-sync", true), chromedp.Flag("disable-extensions", true),
