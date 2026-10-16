@@ -2,7 +2,7 @@
 name: google-messages-local-archive
 description: Search and summarize your local Google Messages SMS/RCS history from OpenClaw. Ask who said what, find old texts, and get conversation context while your message archive stays on your machine and the bundled workflow stays read-only by default.
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   compatibility: "OpenClaw >=2026.8.1; gmcli >=1.1.0"
   openclaw:
     homepage: https://github.com/fdsouvenir/gmcli
@@ -11,9 +11,9 @@ metadata:
     install:
       - id: go-install
         kind: go
-        module: github.com/fdsouvenir/gmcli@v1.1.0
+        module: github.com/fdsouvenir/gmcli@v1.2.0
         bins: ["gmcli"]
-        label: Install gmcli v1.1.0 with Go
+        label: Install gmcli v1.2.0 with Go
 ---
 
 # Google Messages Local Archive
@@ -230,7 +230,8 @@ missing for a known conversation, tell the user to run
 `gmcli history backfill --chat {conversation_id} --requests {n} --count {n}`
 themselves.
 
-A one-shot `gmcli sync` lists only the 50 most recent conversations and the
+With gmcli 1.2.0 or newer, the initial-pass counts are configurable.
+A one-shot `gmcli sync` defaults to the 50 most recent conversations and the
 newest 10 messages in each. If a known conversation is absent from the archive,
 tell the user to run `gmcli sync --conversations {n} --recent 0` themselves to
 list older conversations before backfilling; for periodic one-shot syncs,
