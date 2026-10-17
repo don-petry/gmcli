@@ -3,14 +3,25 @@
 /dist/
 *.exe
 
-# Local dev databases / sessions
+# Local dev databases, credentials, and sessions
 *.db
 *.db-journal
 *.db-shm
 *.db-wal
 session.json
+cookies.txt
+cookies.json
+*.cookies
+*.pem
+*.key
+.env*
 
-# Editor/OS noise
+# Test and coverage artifacts
+coverage.out
+*.coverprofile
+
+# Editor/OS and local agent noise
 .idea/
 .vscode/
 .DS_Store
+.claude/

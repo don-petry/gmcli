@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -41,6 +42,21 @@ func TestWorkflowActionsPinnedToSHA(t *testing.T) {
 			if !pinned.MatchString(ref) {
 				t.Errorf("%s: %s is not pinned to a commit SHA", file, ref)
 			}
+		}
+	}
+}
+
+// Credential exports and local artifacts must never be committable.
+func TestGitignoreCoversSecrets(t *testing.T) {
+	if err := exec.Command("git", "rev-parse", "--is-inside-work-tree").Run(); err != nil {
+		t.Skip("not a git checkout")
+	}
+	for _, path := range []string{
+		"session.json", "gmcli.db", "cookies.txt", "cookies.json", "auth.cookies",
+		".env", ".env.local", "server.key", "cert.pem", "coverage.out", ".claude/settings.json",
+	} {
+		if err := exec.Command("git", "check-ignore", "-q", "--no-index", path).Run(); err != nil {
+			t.Errorf("%s is not ignored by .gitignore", path)
 		}
 	}
 }
