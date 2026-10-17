@@ -104,6 +104,26 @@ func TestRepositoryFormattingFunctional(t *testing.T) {
 	}
 }
 
+// Negative functional test: verify that gofmt gate detects formatting violations
+func TestFormattingDetectionNegativeFunctional(t *testing.T) {
+	dir := t.TempDir()
+	badFile := filepath.Join(dir, "bad.go")
+	// Deliberately poorly indented code
+	badCode := "package main\n\nfunc main() {\nvar x=1\n_ = x\n}\n"
+	if err := os.WriteFile(badFile, []byte(badCode), 0644); err != nil {
+		t.Fatalf("write temp file: %v", err)
+	}
+
+	cmd := exec.Command("gofmt", "-l", badFile)
+	out, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("gofmt failed: %v", err)
+	}
+	if !strings.Contains(string(out), badFile) {
+		t.Errorf("expected gofmt to flag %s, got output: %q", badFile, string(out))
+	}
+}
+
 func TestShellScriptLintingFunctional(t *testing.T) {
 	if _, err := exec.LookPath("shellcheck"); err != nil {
 		t.Skip("shellcheck not found in PATH; skipping functional lint test")
@@ -114,5 +134,17 @@ func TestShellScriptLintingFunctional(t *testing.T) {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Errorf("shellcheck failed for %s:\n%s", scriptPath, string(out))
+	}
+}
+
+func TestBuildExecutableFunctional(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "gmcli-test-bin")
+	cmd := exec.Command("go", "build", "-o", bin, "..")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("go build failed: %v\nOutput: %s", err, string(out))
+	}
+	if fi, err := os.Stat(bin); err != nil || fi.Size() == 0 {
+		t.Fatalf("expected binary to be created and non-empty, err: %v", err)
 	}
 }
