@@ -51,12 +51,22 @@ func TestGitignoreCoversSecrets(t *testing.T) {
 	if err := exec.Command("git", "rev-parse", "--is-inside-work-tree").Run(); err != nil {
 		t.Skip("not a git checkout")
 	}
+	ignored := func(path string) bool {
+		return exec.Command("git", "check-ignore", "-q", "--no-index", path).Run() == nil
+	}
 	for _, path := range []string{
 		"session.json", "gmcli.db", "cookies.txt", "cookies.json", "auth.cookies",
-		".env", ".env.local", "server.key", "cert.pem", "coverage.out", ".claude/settings.json",
+		".env", ".env.local", "server.key", "cert.pem", "coverage.out",
+		".claude/settings.local.json", ".claude/worktrees/feature/main.go",
 	} {
-		if err := exec.Command("git", "check-ignore", "-q", "--no-index", path).Run(); err != nil {
+		if !ignored(path) {
 			t.Errorf("%s is not ignored by .gitignore", path)
+		}
+	}
+	// Shared agent configuration must remain committable.
+	for _, path := range []string{".claude/settings.json", ".claude/skills/README.md"} {
+		if ignored(path) {
+			t.Errorf("%s is ignored by .gitignore but should be committable", path)
 		}
 	}
 }
