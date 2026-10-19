@@ -13,7 +13,9 @@ permissions: {}
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Superseded runs on branches and PRs are cancelled; every push to main
+  # keeps its own verdict so no main commit is left without a result.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   test:
@@ -25,27 +27,26 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # go.mod: the minimum version README.md promises builds from source.
-        # stable: the current release, where govulncheck's stdlib findings are meaningful.
-        go: [go.mod, stable]
+        include:
+          # go.mod: the minimum version README.md promises builds from source.
+          - go: go.mod
+            go-version-file: go.mod
+          # stable: the current release, where govulncheck's stdlib findings are meaningful.
+          - go: stable
+            go-version: stable
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: Set up Go (go.mod minimum)
-        if: matrix.go == 'go.mod'
+      # setup-go treats an empty input as unset, so each matrix entry supplies
+      # exactly one of the two version inputs.
+      - name: Set up Go (${{ matrix.go }})
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Set up Go (stable)
-        if: matrix.go == 'stable'
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "stable"
+          go-version: ${{ matrix.go-version }}
+          go-version-file: ${{ matrix.go-version-file }}
           cache: true
 
       - name: Verify formatting
@@ -61,7 +62,7 @@ jobs:
         run: go vet ./...
 
       - name: Lint shell scripts
-        run: shellcheck skills/google-messages/scripts/check-runtime.sh
+        run: git ls-files -z -- '*.sh' | xargs -0 --no-run-if-empty shellcheck
 
       - name: Test
         run: go test -race -coverprofile=coverage.out ./...
