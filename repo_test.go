@@ -53,9 +53,11 @@ func TestGitignoreCoversSecrets(t *testing.T) {
 		t.Skip("not a git checkout")
 	}
 	// git check-ignore exits 0 for ignored, 1 for not ignored, and 128 on
-	// error; only the first two are answers.
+	// error; only the first two are answers. The developer's global excludes
+	// file is disabled so the verdict comes from the repository's .gitignore
+	// alone, not from a ~/.config/git/ignore entry that happens to overlap.
 	ignored := func(path string) bool {
-		err := exec.Command("git", "check-ignore", "-q", "--no-index", path).Run()
+		err := exec.Command("git", "-c", "core.excludesFile=/dev/null", "check-ignore", "-q", "--no-index", path).Run()
 		if err == nil {
 			return true
 		}
