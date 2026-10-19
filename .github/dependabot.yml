@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # GitHub Actions — weekly checks to keep workflow actions up to date
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # Go Modules — security updates only (limit 0 suppresses routine version-bump noise while allowing CVE patches)
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 0
