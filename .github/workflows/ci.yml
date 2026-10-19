@@ -12,7 +12,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: ci-${{ github.ref }}-${{ github.sha }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -47,20 +47,19 @@ jobs:
         run: go vet ./...
 
       - name: Lint shell scripts
-        run: |
-          if command -v shellcheck >/dev/null 2>&1; then
-            shellcheck skills/google-messages/scripts/check-runtime.sh
-          fi
+        run: shellcheck skills/google-messages/scripts/check-runtime.sh
 
       - name: Test
         run: go test -race -coverprofile=coverage.out ./...
 
       - name: Report coverage summary
         run: |
-          echo "### Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          go tool cover -func=coverage.out | tail -n 25 >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          {
+            echo "### Test Coverage Summary"
+            echo '```'
+            go tool cover -func=coverage.out | tail -n 25
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Browser sign-in fixture
         env:
@@ -72,8 +71,13 @@ jobs:
 
       - name: Vulnerability audit
         run: |
-          echo "### Vulnerability Audit (govulncheck)" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          govulncheck ./... | tee /tmp/govulncheck.txt
-          cat /tmp/govulncheck.txt >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          set -o pipefail
+          status=0
+          govulncheck ./... | tee /tmp/govulncheck.txt || status=$?
+          {
+            echo "### Vulnerability Audit (govulncheck)"
+            echo '```'
+            cat /tmp/govulncheck.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
