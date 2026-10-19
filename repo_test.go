@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -51,8 +52,19 @@ func TestGitignoreCoversSecrets(t *testing.T) {
 	if err := exec.Command("git", "rev-parse", "--is-inside-work-tree").Run(); err != nil {
 		t.Skip("not a git checkout")
 	}
+	// git check-ignore exits 0 for ignored, 1 for not ignored, and 128 on
+	// error; only the first two are answers.
 	ignored := func(path string) bool {
-		return exec.Command("git", "check-ignore", "-q", "--no-index", path).Run() == nil
+		err := exec.Command("git", "check-ignore", "-q", "--no-index", path).Run()
+		if err == nil {
+			return true
+		}
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) && exitErr.ExitCode() == 1 {
+			return false
+		}
+		t.Fatalf("git check-ignore %s: %v", path, err)
+		return false
 	}
 	for _, path := range []string{
 		"session.json", "gmcli.db", "cookies.txt", "cookies.json", "auth.cookies",
@@ -63,8 +75,8 @@ func TestGitignoreCoversSecrets(t *testing.T) {
 			t.Errorf("%s is not ignored by .gitignore", path)
 		}
 	}
-	// Shared agent configuration must remain committable.
-	for _, path := range []string{".claude/settings.json", ".claude/skills/README.md"} {
+	// Shared agent configuration and the env template must remain committable.
+	for _, path := range []string{".env.example", ".claude/settings.json", ".claude/skills/README.md"} {
 		if ignored(path) {
 			t.Errorf("%s is ignored by .gitignore but should be committable", path)
 		}
