@@ -5,6 +5,7 @@
 | Version | Supported |
 | :--- | :--- |
 | `latest` (`main`) | :white_check_mark: |
+| `1.2.x` | :white_check_mark: |
 | `< 1.2.0` | :x: |
 
 Security updates and patches are applied to the `main` branch and current releases. Users are encouraged to stay updated with the latest release.
