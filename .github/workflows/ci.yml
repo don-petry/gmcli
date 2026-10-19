@@ -61,7 +61,9 @@ jobs:
       - name: Vet
         run: go vet ./...
 
+      # shellcheck does not depend on the Go toolchain, so one matrix leg is enough.
       - name: Lint shell scripts
+        if: matrix.go == 'stable'
         run: git ls-files -z -- '*.sh' | xargs -0 --no-run-if-empty shellcheck
 
       - name: Test
