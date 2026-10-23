@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -31,7 +32,13 @@ func TestWorkflowActionsPinnedToSHA(t *testing.T) {
 			t.Fatal(err)
 		}
 		for _, m := range uses.FindAllStringSubmatch(string(raw), -1) {
-			if ref := m[1]; ref[0] != '.' && !pinned.MatchString(ref) {
+			// YAML allows the value to be quoted; a trailing quote would
+			// otherwise defeat the end-anchored SHA match.
+			ref := strings.Trim(m[1], `"'`)
+			if ref == "" || strings.HasPrefix(ref, ".") {
+				continue
+			}
+			if !pinned.MatchString(ref) {
 				t.Errorf("%s: %s is not pinned to a commit SHA", file, ref)
 			}
 		}
