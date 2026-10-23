@@ -15,8 +15,9 @@ cookies.json
 *.pem
 *.key
 .env*
-# The committed template documents the variables without holding values.
+# The committed template documents the variables without holding values; .envrc is for direnv.
 !.env.example
+!.envrc
 
 # Test and coverage artifacts
 coverage.out

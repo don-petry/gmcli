@@ -77,8 +77,8 @@ func TestGitignoreCoversSecrets(t *testing.T) {
 			t.Errorf("%s is not ignored by .gitignore", path)
 		}
 	}
-	// Shared agent configuration and the env template must remain committable.
-	for _, path := range []string{".env.example", ".claude/settings.json", ".claude/skills/README.md"} {
+	// Shared agent configuration, direnv config, and the env template must remain committable.
+	for _, path := range []string{".env.example", ".envrc", ".claude/settings.json", ".claude/skills/README.md"} {
 		if ignored(path) {
 			t.Errorf("%s is ignored by .gitignore but should be committable", path)
 		}
