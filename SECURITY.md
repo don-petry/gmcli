@@ -18,6 +18,7 @@ Instead, please report security concerns privately using GitHub's **[Private Vul
 
 1. Navigate to the [Security](https://github.com/fdsouvenir/gmcli/security) tab of this repository.
 2. Under "Reporting", click **Report a vulnerability**.
+   *(Note for maintainers: Private Vulnerability Reporting must be enabled under repository Settings → Code security.)*
 3. Fill out the report form with details of the finding.
 
 When submitting a report, please include:
